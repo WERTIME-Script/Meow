@@ -16,11 +16,11 @@ local Debris        = game:GetService("Debris")
 -- =========================================================
 -- [ 🟢 CHỈNH SỬA THÔNG TIN TẠI ĐÂY ]
 -- =========================================================
-local MY_NAME     = "ModX.Check-Key" -- <-- ĐÃ ĐỔI TÊN THEO Ý MÀY
+local MY_NAME     = "ModX.Check-Key" 
 local MY_SIGN     = "•By.ModX"        
 
 local KEYS_LIST = {
-    ("Key_01"), -- Điền key vào đây
+    ("Key_01"),
     ("Key_02"),
     ("Key_03"),
     ("Key_04"),
@@ -59,9 +59,9 @@ SubTitle.Size = UDim2.new(0, 200, 0, 20); SubTitle.Position = UDim2.new(0, 15, 0
 SubTitle.Text = MY_SIGN; SubTitle.Font = Enum.Font.RobotoMono; SubTitle.TextSize = 10
 SubTitle.TextColor3 = Color3.fromRGB(114, 118, 125); SubTitle.TextTransparency = 0.4; SubTitle.TextXAlignment = Enum.TextXAlignment.Left; SubTitle.BackgroundTransparency = 1; SubTitle.Parent = MainFrame
 
--- [ NÚT ĐÓNG & GẬP ] --
+-- [ NÚT ĐÓNG & GẬP - ĐÃ FIX DẤU X ] --
 CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.Text = "×"; CloseBtn.TextColor3 = COLOR_RED; CloseBtn.TextSize = 25; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 1; CloseBtn.Parent = MainFrame
+CloseBtn.Text = "X"; CloseBtn.TextColor3 = COLOR_RED; CloseBtn.TextSize = 18; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 1; CloseBtn.Parent = MainFrame
 
 MiniBtn.Size = UDim2.new(0, 30, 0, 30); MiniBtn.Position = UDim2.new(1, -65, 0, 5)
 MiniBtn.Text = "-"; MiniBtn.TextColor3 = Color3.new(1, 1, 1); MiniBtn.TextSize = 25; MiniBtn.Font = Enum.Font.GothamBold; MiniBtn.BackgroundTransparency = 1; MiniBtn.Parent = MainFrame
