@@ -20,7 +20,7 @@ local MY_NAME     = "ModX.Check-Key"
 local MY_SIGN     = "•By.ModX"        
 
 local KEYS_LIST = {
-    ("Key_01"),
+    ("lol"),
     ("Key_02"),
     ("Key_03"),
     ("Key_04"),
