@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MODX V15 - REALTIME FIX</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { --neon: #00f3ff; --pink: #ff00ff; --online: #00ff00; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #000; color: #eee; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
+        #app { width: 100%; max-width: 450px; height: 100vh; background: #000; display: flex; flex-direction: column; border: 1px solid #111; position: relative; }
+        
+        /* RAINBOW ADMIN */
+        .rainbow-text {
+            font-weight: 800; background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shine 2s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        #header { padding: 12px 18px; background: #080808; border-bottom: 1px solid #151515; display: flex; justify-content: space-between; align-items: center; }
+        .status { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+        .dot { width: 7px; height: 7px; background: var(--online); border-radius: 50%; box-shadow: 0 0 8px var(--online); }
+
+        #chat-box { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+
+        /* MESSAGE UI */
+        .msg { padding: 10px 14px; border-radius: 12px; background: #111; border: 1px solid #1a1a1a; max-width: 82%; position: relative; word-wrap: break-word; }
+        .msg-own { align-self: flex-end; border-color: #222; }
+        .msg-other { align-self: flex-start; }
+
+        .name-row { font-size: 10px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+        
+        /* TIKTOK LOGIC */
+        .body-wrapper { overflow: hidden; white-space: pre-wrap; font-size: 14px; line-height: 1.4; transition: max-height 0.3s ease; }
+        .collapsed { max-height: 4.2em; mask-image: linear-gradient(to bottom, black 60%, transparent 100%); }
+        .see-more { color: var(--neon); font-size: 11px; cursor: pointer; font-weight: 800; margin-top: 5px; display: none; }
+
+        .opt-btn { position: absolute; right: 6px; top: 6px; color: #444; cursor: pointer; }
+
+        #footer { padding: 12px; background: #080808; border-top: 1px solid #151515; display: flex; gap: 10px; }
+        #msg-in { flex: 1; padding: 10px 15px; background: #121212; border: 1px solid #222; color: #fff; border-radius: 20px; outline: none; }
+        .btn-send { width: 42px; height: 42px; background: var(--neon); color: #000; border: none; border-radius: 50%; font-weight: 900; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="header">
+        <div class="status" id="my-info">Connecting...</div>
+    </div>
+    <div id="chat-box"></div>
+    <div id="footer">
+        <input type="text" id="msg-in" placeholder="Chat đi...">
+        <button class="btn-send" onclick="sendTxt()">➤</button>
+    </div>
+</div>
+
+<script>
+    let peer, adminConn, clients = [], myName = localStorage.getItem('modx_name') || "User_" + Math.floor(Math.random()*1000);
+    const MASTER = "MODX_V15_REALTIME_FIX";
+    const isAdmin = (myName === "ModZ");
+
+    // 1. Khởi tạo Peer
+    peer = new Peer(isAdmin ? MASTER : undefined);
+
+    peer.on('open', id => {
+        document.getElementById('my-info').innerHTML = `<div class="dot"></div>` + (isAdmin ? `<span class="rainbow-text">ADMIN ModZ</span>` : myName);
+        if(!isAdmin) {
+            // Client kết nối tới Admin
+            adminConn = peer.connect(MASTER);
+            setupConn(adminConn);
+        }
+    });
+
+    // 2. Admin nhận kết nối từ Client
+    peer.on('connection', conn => {
+        clients.push(conn);
+        setupConn(conn);
+    });
+
+    // 3. Setup Logic nhận data (FIX CHÍNH Ở ĐÂY)
+    function setupConn(c) {
+        c.on('data', data => {
+            console.log("Nhận dữ liệu:", data);
+            render(data); // Render ngay lập tức khi nhận data
+            
+            // Nếu là Admin thì phải relay cho những thằng khác
+            if(isAdmin) {
+                clients.forEach(client => {
+                    if(client.peer !== c.peer && client.open) {
+                        client.send(data);
+                    }
+                });
+            }
+        });
+    }
+
+    function sendTxt() {
+        let v = document.getElementById('msg-in').value.trim();
+        if(!v) return;
+        const data = { id: 'm'+Date.now(), name: myName, body: v, isAdm: isAdmin };
+        
+        render(data); // Render chính mình trước
+        
+        if(isAdmin) {
+            clients.forEach(c => c.open && c.send(data));
+        } else if(adminConn && adminConn.open) {
+            adminConn.send(data);
+        }
+        document.getElementById('msg-in').value = "";
+    }
+
+    function render(d) {
+        if(document.getElementById(d.id)) return;
+        const div = document.createElement('div');
+        div.id = d.id;
+        div.className = `msg ${d.name === myName ? 'msg-own' : 'msg-other'}`;
+        
+        div.innerHTML = `
+            <div class="name-row">
+                <b class="${d.isAdm ? 'rainbow-text' : ''}" style="${!d.isAdm ? 'color:var(--neon)' : ''}">${d.name}</b>
+            </div>
+            <div class="body-wrapper collapsed" id="w-${d.id}"><div id="t-${d.id}">${d.body}</div></div>
+            <div class="see-more" id="b-${d.id}" onclick="expand('${d.id}')">Xem thêm</div>`;
+        
+        document.getElementById('chat-box').appendChild(div);
+        
+        // TikTok Logic Check
+        setTimeout(() => {
+            const t = document.getElementById(`t-${d.id}`), w = document.getElementById(`w-${d.id}`);
+            if(t && w && t.scrollHeight > w.clientHeight + 5) {
+                document.getElementById(`b-${d.id}`).style.display = "block";
+            }
+        }, 50);
+
+        document.getElementById('chat-box').scrollTop = 999999;
+    }
+
+    function expand(id) {
+        const w = document.getElementById(`w-${id}`), b = document.getElementById(`b-${id}`);
+        if(w.classList.contains('collapsed')) {
+            w.classList.remove('collapsed'); w.style.maxHeight = w.scrollHeight + "px"; b.innerText = "Thu gọn"; w.style.maskImage = "none";
+        } else {
+            w.classList.add('collapsed'); w.style.maxHeight = "4.2em"; b.innerText = "Xem thêm"; w.style.maskImage = "linear-gradient(to bottom, black 60%, transparent 100%)";
+        }
+    }
+</script>
+</body>
+</html>
